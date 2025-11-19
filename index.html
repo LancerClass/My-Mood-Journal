@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Mood Journal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f4f4f4;
+      border-radius: 12px;
+    }
+    label { font-weight: bold; display: block; margin-top: 20px; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { background: #45a049; }
+    .entry {
+      background: white;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #4CAF50;
+    }
+    .timestamp {
+      color: gray;
+      font-size: 14px;
+    }
+  </style>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <h2>My Mood Journal</h2>
+
+  <label>Mood Switch (e.g., happy → sad):</label>
+  <input type="text" id="mood" placeholder="Describe your mood change..." />
+
+  <label>What caused the mood switch?</label>
+  <textarea id="reason" rows="4" placeholder="Explain what happened..."></textarea>
+
+  <button onclick="saveEntry()">Save Entry</button>
+
+  <h3>Logged Entries</h3>
+  <div id="log"></div>
+
+  <script>
+    function saveEntry() {
+      const mood = document.getElementById('mood').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+
+      if (!mood || !reason) {
+        alert('Please fill out both fields.');
+        return;
+      }
+
+      const entry = {
+        mood,
+        reason,
+        timestamp: new Date().toLocaleString()
+      };
+
+      let data = JSON.parse(localStorage.getItem('moodLogs')) || [];
+      data.push(entry);
+      localStorage.setItem('moodLogs', JSON.stringify(data));
+
+      document.getElementById('mood').value = '';
+      document.getElementById('reason').value = '';
+
+      renderEntries();
+    }
+
+    function renderEntries() {
+      const log = document.getElementById('log');
+      log.innerHTML = '';
+      const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
+
+      data.forEach(entry => {
+        const div = document.createElement('div');
+        div.classList.add('entry');
+        div.innerHTML = `
+          <div class="timestamp">${entry.timestamp}</div>
+          <strong>Mood Switch:</strong> ${entry.mood}<br>
+          <strong>Reason:</strong> ${entry.reason}
+        `;
+        log.appendChild(div);
+      });
+    }
+
+    renderEntries();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
