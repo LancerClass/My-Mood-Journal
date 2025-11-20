@@ -4,112 +4,156 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Mood Journal</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #f4f4f4;
-      border-radius: 12px;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(160deg, #E3ECD9, #C8D8C0);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      transition: background 0.3s;
     }
-    label { font-weight: bold; display: block; margin-top: 20px; }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover { background: #45a049; }
-    .entry {
+
+    h2 { color: #4CAF50; margin-top: 40px; font-weight: 600; font-size: 2rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+
+    .container {
       background: white;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 8px;
-      border-left: 4px solid #4CAF50;
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      margin-bottom: 40px;
+      transition: background 0.3s;
     }
-    .timestamp {
-      color: gray;
-      font-size: 14px;
+
+    label { font-weight: 500; margin-top: 20px; display: block; color: #333; }
+
+    input, textarea {
+      width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; border: 1px solid #ccc; font-size: 1rem; transition: all 0.2s;
     }
+
+    input:focus, textarea:focus { border-color: #4CAF50; box-shadow: 0 0 8px rgba(76,175,80,0.3); outline: none; }
+
+    button { margin-top: 15px; padding: 12px 25px; background: #4CAF50; color: white; font-size: 1rem; font-weight: 500; border: none; border-radius: 15px; cursor: pointer; transition: all 0.2s; width: 100%; }
+    button:hover { background: #45a049; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+    .entry { background: #F9F9F9; padding: 15px 20px; margin-top: 15px; border-radius: 15px; border-left: 6px solid #4CAF50; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: transform 0.2s; }
+    .entry:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+
+    .timestamp { color: #999; font-size: 0.85rem; margin-bottom: 5px; }
+
+    h3 { margin-top: 25px; color: #4CAF50; font-weight: 600; font-size: 1.5rem; text-align: center; }
+
+    .category-select { margin-top: 10px; width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #ccc; font-size: 1rem; }
+
+    .dark-mode { background: #2C2C2C !important; color: #eee !important; }
+    .dark-mode .container { background: #3C3C3C; color: #eee; }
+    .dark-mode input, .dark-mode textarea, .dark-mode .category-select { background: #555; color: #eee; border: 1px solid #777; }
+    .dark-mode .entry { background: #444; border-left-color: #6FCF97; }
+
+    #chartContainer { margin-top: 20px; }
   </style>
-  <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <h2>My Mood Journal</h2>
+  <div class="container">
+    <label>Mood Switch (e.g., happy → sad):</label>
+    <input type="text" id="mood" placeholder="Describe your mood change..." />
 
-  <label>Mood Switch (e.g., happy → sad):</label>
-  <input type="text" id="mood" placeholder="Describe your mood change..." />
+    <label>Category:</label>
+    <select id="category" class="category-select">
+      <option>Work</option>
+      <option>Relationships</option>
+      <option>Health</option>
+      <option>Finance</option>
+      <option>Stress</option>
+      <option>Sleep</option>
+      <option>Other</option>
+    </select>
 
-  <label>What caused the mood switch?</label>
-  <textarea id="reason" rows="4" placeholder="Explain what happened..."></textarea>
+    <label>What caused the mood switch?</label>
+    <textarea id="reason" rows="4" placeholder="Explain what happened..."></textarea>
 
-  <button onclick="saveEntry()">Save Entry</button>
+    <button onclick="saveEntry()">Save Entry</button>
+    <button onclick="exportCSV()">Export CSV</button>
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
 
-  <h3>Logged Entries</h3>
-  <div id="log"></div>
+    <h3>Logged Entries</h3>
+    <div id="log"></div>
+
+    <h3>Mood Chart</h3>
+    <canvas id="moodChart"></canvas>
+  </div>
 
   <script>
     function saveEntry() {
       const mood = document.getElementById('mood').value.trim();
       const reason = document.getElementById('reason').value.trim();
-
-      if (!mood || !reason) {
-        alert('Please fill out both fields.');
-        return;
-      }
-
-      const entry = {
-        mood,
-        reason,
-        timestamp: new Date().toLocaleString()
-      };
-
+      const category = document.getElementById('category').value;
+      if (!mood || !reason) { alert('Please fill out all fields.'); return; }
+      const entry = { mood, reason, category, timestamp: new Date().toLocaleString() };
       let data = JSON.parse(localStorage.getItem('moodLogs')) || [];
       data.push(entry);
       localStorage.setItem('moodLogs', JSON.stringify(data));
-
       document.getElementById('mood').value = '';
       document.getElementById('reason').value = '';
-
       renderEntries();
+      renderChart();
     }
 
     function renderEntries() {
       const log = document.getElementById('log');
       log.innerHTML = '';
       const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
-
       data.forEach(entry => {
         const div = document.createElement('div');
         div.classList.add('entry');
-        div.innerHTML = `
-          <div class="timestamp">${entry.timestamp}</div>
-          <strong>Mood Switch:</strong> ${entry.mood}<br>
-          <strong>Reason:</strong> ${entry.reason}
-        `;
+        div.innerHTML = `<div class="timestamp">${entry.timestamp}</div><strong>Category:</strong> ${entry.category}<br><strong>Mood Switch:</strong> ${entry.mood}<br><strong>Reason:</strong> ${entry.reason}`;
         log.appendChild(div);
       });
     }
 
-    renderEntries();
-  </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+    function exportCSV() {
+      const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
+      if (data.length === 0) { alert('No data to export'); return; }
+      let csv = 'Timestamp,Category,Mood,Reason\n';
+      data.forEach(d => { csv += `${d.timestamp},${d.category},${d.mood},${d.reason}\n`; });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'mood_logs.csv'; a.click();
     }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('moodChart').getContext('2d');
+      const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
+      const categories = {};
+      data.forEach(e => { categories[e.category] = (categories[e.category] || 0) + 1; });
+      if(window.moodChart) window.moodChart.destroy();
+      window.moodChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: Object.keys(categories), datasets: [{ label: 'Mood Entries', data: Object.values(categories), backgroundColor: '#4CAF50' }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+    }
+
+    renderEntries();
+    renderChart();
+
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+    // Optional: Daily reminder notification
+    if (Notification.permission !== 'granted') { Notification.requestPermission(); }
+    setTimeout(() => { if(Notification.permission === 'granted') new Notification('How was your mood today?'); }, 5000);
   </script>
 </body>
 </html>
