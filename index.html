@@ -1,272 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>My Mood Journal</title>
-  <link rel="manifest" href="manifest.json">
-
-  <!-- Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <style>
-    /* --- Cute modern UI --- */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-    :root{
-      --sage-1:#E3ECD9; --sage-2:#C8D8C0; --accent:#4CAF50; --muted:#8A8A8A; --card:#FFFFFF;
-    }
-    *{box-sizing:border-box}
-    body{font-family:Poppins,system-ui,Segoe UI,Arial; margin:0; min-height:100vh; background:linear-gradient(160deg,var(--sage-1),var(--sage-2)); display:flex; align-items:flex-start; justify-content:center; padding:28px;}
-    .app{width:100%;max-width:720px}
-    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-    .logo{width:56px;height:56px;border-radius:14px;background:#E9F6EE;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);box-shadow:0 6px 18px rgba(76,175,80,0.12)}
-    h1{margin:0;font-size:1.25rem;color:#234;}
-
-    .card{background:var(--card);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(2,6,4,0.06);}
-    .flex{display:flex;gap:12px;align-items:center}
-
-    /* entry form */
-    .form-row{display:flex;gap:10px;margin-top:10px}
-    input[type=text], textarea, select{width:100%;padding:10px;border-radius:12px;border:1px solid #e6e6e6;font-size:0.95rem}
-    textarea{min-height:82px}
-    .controls{display:flex;gap:10px;margin-top:12px}
-    .btn{background:var(--accent);color:white;padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-weight:600}
-    .btn.secondary{background:#fff;color:var(--accent);border:1px solid #e2e2e2}
-
-    /* floating add button */
-    .fab{position:fixed;right:22px;bottom:22px;width:64px;height:64px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;box-shadow:0 12px 30px rgba(0,0,0,0.18);cursor:pointer}
-
-    /* entries list */
-    .entries{margin-top:14px;display:grid;gap:12px}
-    .entry{border-radius:12px;padding:12px;background:linear-gradient(180deg,#fff,#fbfffb);display:flex;justify-content:space-between;align-items:flex-start;border-left:6px solid var(--accent);}
-    .entry .meta{font-size:0.85rem;color:var(--muted)}
-
-    /* mini UI bits */
-    .pill{padding:6px 10px;border-radius:999px;background:#F4FFF6;color:#2b6b3a;font-weight:600;font-size:0.85rem}
-
-    /* charts area */
-    .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    canvas{background:transparent;border-radius:10px}
-
-    /* dark-mode */
-    .dark body{background:#0f1720}
-
-    /* garden */
-    .garden{display:flex;align-items:center;gap:10px;margin-top:12px}
-
-    /* achievements */
-    .achievements{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .badge{background:#fff;border-radius:10px;padding:8px 10px;box-shadow:0 6px 14px rgba(0,0,0,0.06);font-weight:600}
-
-    @media(max-width:700px){.charts{grid-template-columns:1fr}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>My Mood Journal</title>
+<link rel="manifest" href="manifest.json" />
+<style>
+:root{
+ --theme-bg:#e8f0e8; --theme-accent:#9fbfa5; --theme-text:#2b2b2b;
+}
+body{
+ margin:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom)+10px) env(safe-area-inset-left);
+ font-family:Arial, sans-serif;background:var(--theme-bg);color:var(--theme-text);
+}
+nav{display:flex;justify-content:space-around;position:fixed;bottom:0;left:0;right:0;background:#fff;padding:10px 0;border-top:1px solid #ccc;}
+nav button{background:none;border:none;font-size:16px;padding:10px;color:#666;}
+nav button.active{color:var(--theme-accent);font-weight:bold;}
+section{display:none;padding:20px;}
+section.active{display:block;}
+.card{background:#fff;margin:10px 0;padding:15px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
+#themePicker{margin-top:10px;}
+.fab{position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:20px;background:var(--theme-accent);color:white;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 8px rgba(0,0,0,0.2);} 
+</style>
 </head>
 <body>
-  <div class="app">
-    <header class="flex">
-      <div class="logo">MJ</div>
-      <div>
-        <h1>My Mood Journal</h1>
-        <div style="font-size:0.9rem;color:var(--muted);">Track mood switches, see trends, and grow your Mood Garden 🌱</div>
-      </div>
-    </header>
 
-    <section class="card" id="mainCard">
-      <!-- ENTRY FORM -->
-      <div style="display:flex;gap:12px;align-items:flex-start;flex-direction:column">
-        <div style="width:100%">
-          <label style="font-weight:600">Mood (short):</label>
-          <input id="moodInput" type="text" placeholder="e.g. calm → anxious" />
-        </div>
+<!-- Tabs Navigation -->
+<nav>
+ <button class="tabBtn active" data-tab="log">Log</button>
+ <button class="tabBtn" data-tab="charts">Charts</button>
+ <button class="tabBtn" data-tab="garden">Garden</button>
+ <button class="tabBtn" data-tab="achievements">Achievements</button>
+ <button class="tabBtn" data-tab="settings">Settings</button>
+</nav>
 
-        <div style="width:100%" class="form-row">
-          <div style="flex:1">
-            <label style="font-weight:600">Category:</label>
-            <select id="categorySelect">
-              <option>Work</option>
-              <option>Relationships</option>
-              <option>Health</option>
-              <option>Finance</option>
-              <option>Stress</option>
-              <option>Sleep</option>
-              <option>Other</option>
-            </select>
-          </div>
+<!-- Log Section -->
+<section id="log" class="active">
+ <div class="card">
+ <h2>Add Mood Entry</h2>
+ <select id="moodSelect">
+ <option>😊 Happy</option><option>😔 Sad</option><option>😡 Angry</option><option>😵 Overwhelmed</option><option>😴 Tired</option><option>🫶 Loved</option>
+ </select>
+ <textarea id="moodNote" placeholder="What happened?" style="width:100%;margin-top:10px;font-size:16px;"></textarea>
+ <button id="saveEntry">Save</button>
+ </div>
+ <div id="entries"></div>
+</section>
 
-          <div style="width:120px">
-            <label style="font-weight:600">Mood emoji:</label>
-            <select id="emojiSelect">
-              <option>🙂 Happy</option>
-              <option>😐 Neutral</option>
-              <option>☹️ Sad</option>
-              <option>😡 Angry</option>
-              <option>😵 Overwhelmed</option>
-              <option>😴 Tired</option>
-            </select>
-          </div>
-        </div>
+<!-- Charts Section -->
+<section id="charts">
+ <div class="card"><h2>Entries by Category</h2><canvas id="categoryChart"></canvas></div>
+ <div class="card"><h2>Entries by Time of Day</h2><canvas id="timeChart"></canvas></div>
+</section>
 
-        <div style="width:100%">
-          <label style="font-weight:600">What happened?</label>
-          <textarea id="reasonInput" placeholder="Describe the trigger or event..."></textarea>
-        </div>
+<!-- Garden Section -->
+<section id="garden">
+ <div class="card"><h2>Your Mood Garden</h2><p>Plants grow as positive moods increase.</p><div id="gardenArea">🌱</div></div>
+</section>
 
-        <div class="controls">
-          <button class="btn" id="saveBtn">Save Entry</button>
-          <button class="btn secondary" id="voiceBtn">🎤 Voice</button>
-          <button class="btn secondary" id="exportBtn">📤 Export</button>
-          <button class="btn secondary" id="importBtn">📥 Import</button>
-        </div>
+<!-- Achievements Section -->
+<section id="achievements">
+ <div class="card"><h2>Achievements</h2><ul id="achievementList"></ul></div>
+</section>
 
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-          <input id="filterTxt" placeholder="Filter by text or category" style="padding:8px;border-radius:10px;border:1px solid #eee;flex:1" />
-          <button class="btn secondary" id="clearBtn">Clear</button>
-        </div>
+<!-- Settings Section -->
+<section id="settings">
+ <div class="card"><h2>Theme Selector</h2>
+ <select id="themePicker">
+  <option value="sage">Sage</option>
+  <option value="pink">Pink Blossom</option>
+  <option value="lavender">Lavender</option>
+  <option value="blue">Sky Blue</option>
+  <option value="cocoa">Cocoa</option>
+  <option value="dark">Dark</option>
+ </select>
+ </div>
+</section>
 
-        <!-- garden + achievements + reminders -->
-        <div class="garden">
-          <div style="flex:1">
-            <label style="font-weight:600">Mood Garden</label>
-            <div id="gardenArea" style="height:70px;padding:8px;border-radius:10px;background:linear-gradient(180deg,#fff,#f7fff7);display:flex;align-items:center"></div>
-          </div>
-          <div style="width:180px">
-            <label style="font-weight:600">Achievements</label>
-            <div class="achievements" id="achievements"></div>
-          </div>
-        </div>
+<div class="fab" id="fab">+</div>
 
-      </div>
+<script>
+// Tab Switching
+const tabs=document.querySelectorAll('.tabBtn');
+const sections=document.querySelectorAll('section');
+tabs.forEach(btn=>btn.onclick=()=>{
+ tabs.forEach(b=>b.classList.remove('active'));
+ btn.classList.add('active');
+ sections.forEach(s=>s.classList.remove('active'));
+ document.getElementById(btn.dataset.tab).classList.add('active');
+});
 
-      <!-- charts + entries -->
-      <div class="charts">
-        <div class="card">
-          <h3 style="margin:6px 0">Entries by Category</h3>
-          <canvas id="catChart" style="height:160px"></canvas>
-        </div>
-        <div class="card">
-          <h3 style="margin:6px 0">Time of Day</h3>
-          <canvas id="timeChart" style="height:160px"></canvas>
-        </div>
-      </div>
+// Theme Selector
+const themes={
+ sage:{bg:'#e8f0e8',accent:'#9fbfa5',text:'#2b2b2b'},
+ pink:{bg:'#ffeaf3',accent:'#ff7fbf',text:'#3a1e2e'},
+ lavender:{bg:'#f3eaff',accent:'#b28dff',text:'#2b1e3a'},
+ blue:{bg:'#e8f4ff',accent:'#7fafff',text:'#1e2e3a'},
+ cocoa:{bg:'#f1e6d8',accent:'#b58b61',text:'#3a2e1e'},
+ dark:{bg:'#1e1e1e',accent:'#7f7f7f',text:'#ffffff'}
+};
 
-      <div style="margin-top:12px">
-        <h3 style="margin:6px 0">Recent Entries</h3>
-        <div class="entries card" id="entriesList"></div>
-      </div>
+document.getElementById('themePicker').onchange=e=>{
+ const t=themes[e.target.value];
+ for(let v in t){document.documentElement.style.setProperty(`--theme-${v}`,t[v]);}
+ localStorage.setItem('theme',e.target.value);
+};
 
-    </section>
-
-    <div class="fab" id="fab">+</div>
-  </div>
-
-  <script>
-    // --- Utilities ---
-    function nowISO(){ return new Date().toISOString(); }
-    function readData(){ return JSON.parse(localStorage.getItem('moodData')||'[]'); }
-    function saveData(d){ localStorage.setItem('moodData', JSON.stringify(d)); }
-
-    // --- Save Entry ---
-    document.getElementById('saveBtn').addEventListener('click', ()=>{
-      const mood = document.getElementById('moodInput').value.trim();
-      const reason = document.getElementById('reasonInput').value.trim();
-      const category = document.getElementById('categorySelect').value;
-      const emoji = document.getElementById('emojiSelect').value.split(' ')[0];
-      if(!mood || !reason){ alert('Please add a mood and short reason.'); return; }
-      const entry = { id:Date.now(), mood, reason, category, emoji, ts:nowISO() };
-      const d = readData(); d.push(entry); saveData(d); renderAll();
-    });
-
-    // --- Voice to text ---
-    const voiceBtn = document.getElementById('voiceBtn');
-    let recognition;
-    if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SR(); recognition.lang='en-US'; recognition.interimResults=false; recognition.maxAlternatives=1;
-      recognition.onresult = (e)=>{ const t=e.results[0][0].transcript; document.getElementById('reasonInput').value += (document.getElementById('reasonInput').value ? ' ' : '') + t; };
-    } else { voiceBtn.style.display='none'; }
-    voiceBtn.onclick = ()=>{ if(recognition){ recognition.start(); } };
-
-    // --- Render entries + filters ---
-    function renderEntries(filter=''){
-      const list = document.getElementById('entriesList'); list.innerHTML='';
-      const data = readData().slice().reverse();
-      const f = filter.toLowerCase();
-      const filtered = data.filter(e=> (e.mood+e.reason+e.category).toLowerCase().includes(f));
-      filtered.forEach(e=>{
-        const div = document.createElement('div'); div.className='entry';
-        div.innerHTML = `<div><div class='meta'>${new Date(e.ts).toLocaleString()} • <span class='pill'>${e.category}</span></div><div style='margin-top:6px;font-weight:700'>${e.emoji} ${e.mood}</div><div style='margin-top:6px;color:#444'>${e.reason}</div></div><div style='text-align:right'><button class='btn secondary' onclick='deleteEntry(${e.id})'>Delete</button></div>`;
-        list.appendChild(div);
-      });
-    }
-    function deleteEntry(id){ if(!confirm('Delete this entry?')) return; let d=readData(); d=d.filter(x=>x.id!==id); saveData(d); renderAll(); }
-
-    // --- Charts ---
-    let catChart, timeChart;
-    function renderCharts(){ const data = readData(); const counts={}; const timeCounts={'Morning':0,'Afternoon':0,'Evening':0,'Night':0};
-      data.forEach(d=>{ counts[d.category]=(counts[d.category]||0)+1; const hr=new Date(d.ts).getHours(); if(hr<6) timeCounts.Night++; else if(hr<12) timeCounts.Morning++; else if(hr<18) timeCounts.Afternoon++; else timeCounts.Evening++; });
-      const catLabels=Object.keys(counts); const catVals=Object.values(counts);
-      if(catChart) catChart.destroy(); catChart=new Chart(document.getElementById('catChart').getContext('2d'),{type:'bar',data:{labels:catLabels, datasets:[{data:catVals, backgroundColor:catLabels.map((_,i)=>`hsl(${i*40},70%,50%)`)}]}, options:{plugins:{legend:{display:false}}}});
-      if(timeChart) timeChart.destroy(); timeChart=new Chart(document.getElementById('timeChart').getContext('2d'),{type:'doughnut',data:{labels:Object.keys(timeCounts), datasets:[{data:Object.values(timeCounts), backgroundColor:['#ffd6b6','#a7ffd0','#d0e1ff','#f6d0ff']}]}, options:{plugins:{legend:{position:'bottom'}}}});
-    }
-
-    // --- Garden growth ---
-    function renderGarden(){ const area=document.getElementById('gardenArea'); area.innerHTML=''; const data=readData(); const positive = data.filter(e=> ['🙂','Happy','Satisfied'].includes(e.emoji) || e.mood.toLowerCase().includes('happy') ).length; const growth=Math.min(100, positive*12);
-      const plant=document.createElement('div'); plant.style.width='100%'; plant.style.height='56px'; plant.style.display='flex'; plant.style.alignItems='center'; plant.style.gap='8px';
-      const pot=document.createElement('div'); pot.style.width='40px'; pot.style.height='40px'; pot.style.borderRadius='8px'; pot.style.background='#c78b6b'; pot.style.display='flex'; pot.style.alignItems='flex-end'; pot.style.justifyContent='center';
-      const stem=document.createElement('div'); stem.style.width='6px'; stem.style.height=(10+Math.round(growth*0.4))+'px'; stem.style.background='#3b7d3b'; stem.style.borderRadius='4px'; pot.appendChild(stem);
-      plant.appendChild(pot); const text=document.createElement('div'); text.innerHTML=`Growth: ${growth}% <div style='font-size:0.8rem;color:#666'>Positive entries: ${positive}</div>`; area.appendChild(plant); area.appendChild(text);
-    }
-
-    // --- Achievements ---
-    function renderAchievements(){ const box=document.getElementById('achievements'); box.innerHTML=''; const data=readData(); const n=data.length; const streak = getStreak();
-      const badges=[]; if(n>=1) badges.push('First Entry'); if(n>=7) badges.push('7 Entries'); if(streak>=3) badges.push('3-Day Streak'); if(n>=30) badges.push('30 Entries');
-      badges.forEach(b=>{ const el=document.createElement('div'); el.className='badge'; el.textContent=b; box.appendChild(el); });
-    }
-    function getStreak(){ const data=readData().map(d=>new Date(d.ts).toDateString()).reverse(); if(!data.length) return 0; let streak=0; let cur=new Date(); for(let i=0;i<data.length;i++){ if(new Date(data[i]).toDateString()===cur.toDateString()){ streak++; cur.setDate(cur.getDate()-1); } else break; } return streak; }
-
-    // --- Export / Import (JSON & CSV & PDF) ---
-    document.getElementById('exportBtn').addEventListener('click', ()=>{
-      const data=readData(); if(!data.length){ alert('No entries to export'); return; }
-      // JSON backup
-      const jsonBlob=new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(jsonBlob); a.download='mood_backup.json'; a.click();
-      // CSV & PDF could be added here as well
-    });
-    document.getElementById('importBtn').addEventListener('click', ()=>{
-      const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=(e)=>{ const f=e.target.files[0]; const reader=new FileReader(); reader.onload=(ev)=>{ try{ const parsed=JSON.parse(ev.target.result); if(Array.isArray(parsed)){ saveData(parsed); renderAll(); alert('Imported '+parsed.length+' entries'); } else alert('Invalid file'); }catch(err){alert('Invalid JSON');}}; reader.readAsText(f); }; input.click();
-    });
-
-    // --- Filtering & Clear ---
-    document.getElementById('filterTxt').addEventListener('input',(e)=>{ renderEntries(e.target.value); });
-    document.getElementById('clearBtn').addEventListener('click',()=>{ if(confirm('Clear all entries?')){ saveData([]); renderAll(); } });
-
-    // --- delete helper exposed globally for inline onclick ---
-    window.deleteEntry = deleteEntry;
-
-    // --- Notifications / reminders ---
-    if('Notification' in window){ if(Notification.permission!=='granted') Notification.requestPermission(); }
-    function sendReminder(){ if(Notification.permission==='granted') new Notification('How was your mood today?', {body:'Tap to log a quick entry.'}); }
-    // simple daily reminder using localStorage minute-check (will run while site open) 
-    setInterval(()=>{
-      const last = localStorage.getItem('lastReminderMinute')||''; const now=new Date(); const key = now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate()+"-"+now.getHours(); if(last!==key){ localStorage.setItem('lastReminderMinute', key); if(now.getHours()===20){ sendReminder(); } }
-    }, 60*1000);
-
-    // --- PDF report using jsPDF ---
-    async function exportPDF(){ const { jsPDF } = window.jspdf; const doc = new jsPDF(); const data=readData(); doc.setFontSize(16); doc.text('My Mood Journal Report',14,18); doc.setFontSize(10); let y=28; data.forEach((d,i)=>{ if(y>270){ doc.addPage(); y=20; } doc.text(`${new Date(d.ts).toLocaleString()} — [${d.category}] ${d.emoji} ${d.mood}`,14,y); y+=6; doc.text(d.reason,14,y); y+=8; }); doc.save('mood_report.pdf'); }
-
-    // add keyboard shortcut for PDF
-    document.addEventListener('keydown',(e)=>{ if(e.ctrlKey && e.key==='p'){ e.preventDefault(); exportPDF(); } });
-
-    // --- Fab opens quick add modal (scroll to top focus) ---
-    document.getElementById('fab').addEventListener('click', ()=>{ window.scrollTo({top:0,behavior:'smooth'}); document.getElementById('moodInput').focus(); });
-
-    // --- full render ---
-    function renderAll(){ renderEntries(document.getElementById('filterTxt').value||''); renderCharts(); renderGarden(); renderAchievements(); }
-    renderAll();
-
-    // --- Service worker register ---
-    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-  </script>
+const saved=localStorage.getItem('theme');
+if(saved){document.getElementById('themePicker').value=saved;document.getElementById('themePicker').onchange({target:{value:saved}});}
+</script>
 </body>
 </html>
