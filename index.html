@@ -1,159 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>My Mood Journal</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(160deg, #E3ECD9, #C8D8C0);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      transition: background 0.3s;
+    /* --- Cute modern UI --- */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    :root{
+      --sage-1:#E3ECD9; --sage-2:#C8D8C0; --accent:#4CAF50; --muted:#8A8A8A; --card:#FFFFFF;
     }
+    *{box-sizing:border-box}
+    body{font-family:Poppins,system-ui,Segoe UI,Arial; margin:0; min-height:100vh; background:linear-gradient(160deg,var(--sage-1),var(--sage-2)); display:flex; align-items:flex-start; justify-content:center; padding:28px;}
+    .app{width:100%;max-width:720px}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .logo{width:56px;height:56px;border-radius:14px;background:#E9F6EE;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);box-shadow:0 6px 18px rgba(76,175,80,0.12)}
+    h1{margin:0;font-size:1.25rem;color:#234;}
 
-    h2 { color: #4CAF50; margin-top: 40px; font-weight: 600; font-size: 2rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+    .card{background:var(--card);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(2,6,4,0.06);}
+    .flex{display:flex;gap:12px;align-items:center}
 
-    .container {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-      margin-bottom: 40px;
-      transition: background 0.3s;
-    }
+    /* entry form */
+    .form-row{display:flex;gap:10px;margin-top:10px}
+    input[type=text], textarea, select{width:100%;padding:10px;border-radius:12px;border:1px solid #e6e6e6;font-size:0.95rem}
+    textarea{min-height:82px}
+    .controls{display:flex;gap:10px;margin-top:12px}
+    .btn{background:var(--accent);color:white;padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-weight:600}
+    .btn.secondary{background:#fff;color:var(--accent);border:1px solid #e2e2e2}
 
-    label { font-weight: 500; margin-top: 20px; display: block; color: #333; }
+    /* floating add button */
+    .fab{position:fixed;right:22px;bottom:22px;width:64px;height:64px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;box-shadow:0 12px 30px rgba(0,0,0,0.18);cursor:pointer}
 
-    input, textarea {
-      width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; border: 1px solid #ccc; font-size: 1rem; transition: all 0.2s;
-    }
+    /* entries list */
+    .entries{margin-top:14px;display:grid;gap:12px}
+    .entry{border-radius:12px;padding:12px;background:linear-gradient(180deg,#fff,#fbfffb);display:flex;justify-content:space-between;align-items:flex-start;border-left:6px solid var(--accent);}
+    .entry .meta{font-size:0.85rem;color:var(--muted)}
 
-    input:focus, textarea:focus { border-color: #4CAF50; box-shadow: 0 0 8px rgba(76,175,80,0.3); outline: none; }
+    /* mini UI bits */
+    .pill{padding:6px 10px;border-radius:999px;background:#F4FFF6;color:#2b6b3a;font-weight:600;font-size:0.85rem}
 
-    button { margin-top: 15px; padding: 12px 25px; background: #4CAF50; color: white; font-size: 1rem; font-weight: 500; border: none; border-radius: 15px; cursor: pointer; transition: all 0.2s; width: 100%; }
-    button:hover { background: #45a049; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    /* charts area */
+    .charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    canvas{background:transparent;border-radius:10px}
 
-    .entry { background: #F9F9F9; padding: 15px 20px; margin-top: 15px; border-radius: 15px; border-left: 6px solid #4CAF50; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: transform 0.2s; }
-    .entry:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+    /* dark-mode */
+    .dark body{background:#0f1720}
 
-    .timestamp { color: #999; font-size: 0.85rem; margin-bottom: 5px; }
+    /* garden */
+    .garden{display:flex;align-items:center;gap:10px;margin-top:12px}
 
-    h3 { margin-top: 25px; color: #4CAF50; font-weight: 600; font-size: 1.5rem; text-align: center; }
+    /* achievements */
+    .achievements{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .badge{background:#fff;border-radius:10px;padding:8px 10px;box-shadow:0 6px 14px rgba(0,0,0,0.06);font-weight:600}
 
-    .category-select { margin-top: 10px; width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #ccc; font-size: 1rem; }
-
-    .dark-mode { background: #2C2C2C !important; color: #eee !important; }
-    .dark-mode .container { background: #3C3C3C; color: #eee; }
-    .dark-mode input, .dark-mode textarea, .dark-mode .category-select { background: #555; color: #eee; border: 1px solid #777; }
-    .dark-mode .entry { background: #444; border-left-color: #6FCF97; }
-
-    #chartContainer { margin-top: 20px; }
+    @media(max-width:700px){.charts{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-  <h2>My Mood Journal</h2>
-  <div class="container">
-    <label>Mood Switch (e.g., happy → sad):</label>
-    <input type="text" id="mood" placeholder="Describe your mood change..." />
+  <div class="app">
+    <header class="flex">
+      <div class="logo">MJ</div>
+      <div>
+        <h1>My Mood Journal</h1>
+        <div style="font-size:0.9rem;color:var(--muted);">Track mood switches, see trends, and grow your Mood Garden 🌱</div>
+      </div>
+    </header>
 
-    <label>Category:</label>
-    <select id="category" class="category-select">
-      <option>Work</option>
-      <option>Relationships</option>
-      <option>Health</option>
-      <option>Finance</option>
-      <option>Stress</option>
-      <option>Sleep</option>
-      <option>Other</option>
-    </select>
+    <section class="card" id="mainCard">
+      <!-- ENTRY FORM -->
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-direction:column">
+        <div style="width:100%">
+          <label style="font-weight:600">Mood (short):</label>
+          <input id="moodInput" type="text" placeholder="e.g. calm → anxious" />
+        </div>
 
-    <label>What caused the mood switch?</label>
-    <textarea id="reason" rows="4" placeholder="Explain what happened..."></textarea>
+        <div style="width:100%" class="form-row">
+          <div style="flex:1">
+            <label style="font-weight:600">Category:</label>
+            <select id="categorySelect">
+              <option>Work</option>
+              <option>Relationships</option>
+              <option>Health</option>
+              <option>Finance</option>
+              <option>Stress</option>
+              <option>Sleep</option>
+              <option>Other</option>
+            </select>
+          </div>
 
-    <button onclick="saveEntry()">Save Entry</button>
-    <button onclick="exportCSV()">Export CSV</button>
-    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+          <div style="width:120px">
+            <label style="font-weight:600">Mood emoji:</label>
+            <select id="emojiSelect">
+              <option>🙂 Happy</option>
+              <option>😐 Neutral</option>
+              <option>☹️ Sad</option>
+              <option>😡 Angry</option>
+              <option>😵 Overwhelmed</option>
+              <option>😴 Tired</option>
+            </select>
+          </div>
+        </div>
 
-    <h3>Logged Entries</h3>
-    <div id="log"></div>
+        <div style="width:100%">
+          <label style="font-weight:600">What happened?</label>
+          <textarea id="reasonInput" placeholder="Describe the trigger or event..."></textarea>
+        </div>
 
-    <h3>Mood Chart</h3>
-    <canvas id="moodChart"></canvas>
+        <div class="controls">
+          <button class="btn" id="saveBtn">Save Entry</button>
+          <button class="btn secondary" id="voiceBtn">🎤 Voice</button>
+          <button class="btn secondary" id="exportBtn">📤 Export</button>
+          <button class="btn secondary" id="importBtn">📥 Import</button>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <input id="filterTxt" placeholder="Filter by text or category" style="padding:8px;border-radius:10px;border:1px solid #eee;flex:1" />
+          <button class="btn secondary" id="clearBtn">Clear</button>
+        </div>
+
+        <!-- garden + achievements + reminders -->
+        <div class="garden">
+          <div style="flex:1">
+            <label style="font-weight:600">Mood Garden</label>
+            <div id="gardenArea" style="height:70px;padding:8px;border-radius:10px;background:linear-gradient(180deg,#fff,#f7fff7);display:flex;align-items:center"></div>
+          </div>
+          <div style="width:180px">
+            <label style="font-weight:600">Achievements</label>
+            <div class="achievements" id="achievements"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- charts + entries -->
+      <div class="charts">
+        <div class="card">
+          <h3 style="margin:6px 0">Entries by Category</h3>
+          <canvas id="catChart" style="height:160px"></canvas>
+        </div>
+        <div class="card">
+          <h3 style="margin:6px 0">Time of Day</h3>
+          <canvas id="timeChart" style="height:160px"></canvas>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <h3 style="margin:6px 0">Recent Entries</h3>
+        <div class="entries card" id="entriesList"></div>
+      </div>
+
+    </section>
+
+    <div class="fab" id="fab">+</div>
   </div>
 
   <script>
-    function saveEntry() {
-      const mood = document.getElementById('mood').value.trim();
-      const reason = document.getElementById('reason').value.trim();
-      const category = document.getElementById('category').value;
-      if (!mood || !reason) { alert('Please fill out all fields.'); return; }
-      const entry = { mood, reason, category, timestamp: new Date().toLocaleString() };
-      let data = JSON.parse(localStorage.getItem('moodLogs')) || [];
-      data.push(entry);
-      localStorage.setItem('moodLogs', JSON.stringify(data));
-      document.getElementById('mood').value = '';
-      document.getElementById('reason').value = '';
-      renderEntries();
-      renderChart();
-    }
+    // --- Utilities ---
+    function nowISO(){ return new Date().toISOString(); }
+    function readData(){ return JSON.parse(localStorage.getItem('moodData')||'[]'); }
+    function saveData(d){ localStorage.setItem('moodData', JSON.stringify(d)); }
 
-    function renderEntries() {
-      const log = document.getElementById('log');
-      log.innerHTML = '';
-      const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
-      data.forEach(entry => {
-        const div = document.createElement('div');
-        div.classList.add('entry');
-        div.innerHTML = `<div class="timestamp">${entry.timestamp}</div><strong>Category:</strong> ${entry.category}<br><strong>Mood Switch:</strong> ${entry.mood}<br><strong>Reason:</strong> ${entry.reason}`;
-        log.appendChild(div);
+    // --- Save Entry ---
+    document.getElementById('saveBtn').addEventListener('click', ()=>{
+      const mood = document.getElementById('moodInput').value.trim();
+      const reason = document.getElementById('reasonInput').value.trim();
+      const category = document.getElementById('categorySelect').value;
+      const emoji = document.getElementById('emojiSelect').value.split(' ')[0];
+      if(!mood || !reason){ alert('Please add a mood and short reason.'); return; }
+      const entry = { id:Date.now(), mood, reason, category, emoji, ts:nowISO() };
+      const d = readData(); d.push(entry); saveData(d); renderAll();
+    });
+
+    // --- Voice to text ---
+    const voiceBtn = document.getElementById('voiceBtn');
+    let recognition;
+    if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR(); recognition.lang='en-US'; recognition.interimResults=false; recognition.maxAlternatives=1;
+      recognition.onresult = (e)=>{ const t=e.results[0][0].transcript; document.getElementById('reasonInput').value += (document.getElementById('reasonInput').value ? ' ' : '') + t; };
+    } else { voiceBtn.style.display='none'; }
+    voiceBtn.onclick = ()=>{ if(recognition){ recognition.start(); } };
+
+    // --- Render entries + filters ---
+    function renderEntries(filter=''){
+      const list = document.getElementById('entriesList'); list.innerHTML='';
+      const data = readData().slice().reverse();
+      const f = filter.toLowerCase();
+      const filtered = data.filter(e=> (e.mood+e.reason+e.category).toLowerCase().includes(f));
+      filtered.forEach(e=>{
+        const div = document.createElement('div'); div.className='entry';
+        div.innerHTML = `<div><div class='meta'>${new Date(e.ts).toLocaleString()} • <span class='pill'>${e.category}</span></div><div style='margin-top:6px;font-weight:700'>${e.emoji} ${e.mood}</div><div style='margin-top:6px;color:#444'>${e.reason}</div></div><div style='text-align:right'><button class='btn secondary' onclick='deleteEntry(${e.id})'>Delete</button></div>`;
+        list.appendChild(div);
       });
     }
+    function deleteEntry(id){ if(!confirm('Delete this entry?')) return; let d=readData(); d=d.filter(x=>x.id!==id); saveData(d); renderAll(); }
 
-    function exportCSV() {
-      const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
-      if (data.length === 0) { alert('No data to export'); return; }
-      let csv = 'Timestamp,Category,Mood,Reason\n';
-      data.forEach(d => { csv += `${d.timestamp},${d.category},${d.mood},${d.reason}\n`; });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'mood_logs.csv'; a.click();
+    // --- Charts ---
+    let catChart, timeChart;
+    function renderCharts(){ const data = readData(); const counts={}; const timeCounts={'Morning':0,'Afternoon':0,'Evening':0,'Night':0};
+      data.forEach(d=>{ counts[d.category]=(counts[d.category]||0)+1; const hr=new Date(d.ts).getHours(); if(hr<6) timeCounts.Night++; else if(hr<12) timeCounts.Morning++; else if(hr<18) timeCounts.Afternoon++; else timeCounts.Evening++; });
+      const catLabels=Object.keys(counts); const catVals=Object.values(counts);
+      if(catChart) catChart.destroy(); catChart=new Chart(document.getElementById('catChart').getContext('2d'),{type:'bar',data:{labels:catLabels, datasets:[{data:catVals, backgroundColor:catLabels.map((_,i)=>`hsl(${i*40},70%,50%)`)}]}, options:{plugins:{legend:{display:false}}}});
+      if(timeChart) timeChart.destroy(); timeChart=new Chart(document.getElementById('timeChart').getContext('2d'),{type:'doughnut',data:{labels:Object.keys(timeCounts), datasets:[{data:Object.values(timeCounts), backgroundColor:['#ffd6b6','#a7ffd0','#d0e1ff','#f6d0ff']}]}, options:{plugins:{legend:{position:'bottom'}}}});
     }
 
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
+    // --- Garden growth ---
+    function renderGarden(){ const area=document.getElementById('gardenArea'); area.innerHTML=''; const data=readData(); const positive = data.filter(e=> ['🙂','Happy','Satisfied'].includes(e.emoji) || e.mood.toLowerCase().includes('happy') ).length; const growth=Math.min(100, positive*12);
+      const plant=document.createElement('div'); plant.style.width='100%'; plant.style.height='56px'; plant.style.display='flex'; plant.style.alignItems='center'; plant.style.gap='8px';
+      const pot=document.createElement('div'); pot.style.width='40px'; pot.style.height='40px'; pot.style.borderRadius='8px'; pot.style.background='#c78b6b'; pot.style.display='flex'; pot.style.alignItems='flex-end'; pot.style.justifyContent='center';
+      const stem=document.createElement('div'); stem.style.width='6px'; stem.style.height=(10+Math.round(growth*0.4))+'px'; stem.style.background='#3b7d3b'; stem.style.borderRadius='4px'; pot.appendChild(stem);
+      plant.appendChild(pot); const text=document.createElement('div'); text.innerHTML=`Growth: ${growth}% <div style='font-size:0.8rem;color:#666'>Positive entries: ${positive}</div>`; area.appendChild(plant); area.appendChild(text);
     }
 
-    function renderChart() {
-      const ctx = document.getElementById('moodChart').getContext('2d');
-      const data = JSON.parse(localStorage.getItem('moodLogs')) || [];
-      const categories = {};
-      data.forEach(e => { categories[e.category] = (categories[e.category] || 0) + 1; });
-      if(window.moodChart) window.moodChart.destroy();
-      window.moodChart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: Object.keys(categories), datasets: [{ label: 'Mood Entries', data: Object.values(categories), backgroundColor: '#4CAF50' }] },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-      });
+    // --- Achievements ---
+    function renderAchievements(){ const box=document.getElementById('achievements'); box.innerHTML=''; const data=readData(); const n=data.length; const streak = getStreak();
+      const badges=[]; if(n>=1) badges.push('First Entry'); if(n>=7) badges.push('7 Entries'); if(streak>=3) badges.push('3-Day Streak'); if(n>=30) badges.push('30 Entries');
+      badges.forEach(b=>{ const el=document.createElement('div'); el.className='badge'; el.textContent=b; box.appendChild(el); });
     }
+    function getStreak(){ const data=readData().map(d=>new Date(d.ts).toDateString()).reverse(); if(!data.length) return 0; let streak=0; let cur=new Date(); for(let i=0;i<data.length;i++){ if(new Date(data[i]).toDateString()===cur.toDateString()){ streak++; cur.setDate(cur.getDate()-1); } else break; } return streak; }
 
-    renderEntries();
-    renderChart();
+    // --- Export / Import (JSON & CSV & PDF) ---
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const data=readData(); if(!data.length){ alert('No entries to export'); return; }
+      // JSON backup
+      const jsonBlob=new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(jsonBlob); a.download='mood_backup.json'; a.click();
+      // CSV & PDF could be added here as well
+    });
+    document.getElementById('importBtn').addEventListener('click', ()=>{
+      const input=document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange=(e)=>{ const f=e.target.files[0]; const reader=new FileReader(); reader.onload=(ev)=>{ try{ const parsed=JSON.parse(ev.target.result); if(Array.isArray(parsed)){ saveData(parsed); renderAll(); alert('Imported '+parsed.length+' entries'); } else alert('Invalid file'); }catch(err){alert('Invalid JSON');}}; reader.readAsText(f); }; input.click();
+    });
 
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    // --- Filtering & Clear ---
+    document.getElementById('filterTxt').addEventListener('input',(e)=>{ renderEntries(e.target.value); });
+    document.getElementById('clearBtn').addEventListener('click',()=>{ if(confirm('Clear all entries?')){ saveData([]); renderAll(); } });
 
-    // Optional: Daily reminder notification
-    if (Notification.permission !== 'granted') { Notification.requestPermission(); }
-    setTimeout(() => { if(Notification.permission === 'granted') new Notification('How was your mood today?'); }, 5000);
+    // --- delete helper exposed globally for inline onclick ---
+    window.deleteEntry = deleteEntry;
+
+    // --- Notifications / reminders ---
+    if('Notification' in window){ if(Notification.permission!=='granted') Notification.requestPermission(); }
+    function sendReminder(){ if(Notification.permission==='granted') new Notification('How was your mood today?', {body:'Tap to log a quick entry.'}); }
+    // simple daily reminder using localStorage minute-check (will run while site open) 
+    setInterval(()=>{
+      const last = localStorage.getItem('lastReminderMinute')||''; const now=new Date(); const key = now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate()+"-"+now.getHours(); if(last!==key){ localStorage.setItem('lastReminderMinute', key); if(now.getHours()===20){ sendReminder(); } }
+    }, 60*1000);
+
+    // --- PDF report using jsPDF ---
+    async function exportPDF(){ const { jsPDF } = window.jspdf; const doc = new jsPDF(); const data=readData(); doc.setFontSize(16); doc.text('My Mood Journal Report',14,18); doc.setFontSize(10); let y=28; data.forEach((d,i)=>{ if(y>270){ doc.addPage(); y=20; } doc.text(`${new Date(d.ts).toLocaleString()} — [${d.category}] ${d.emoji} ${d.mood}`,14,y); y+=6; doc.text(d.reason,14,y); y+=8; }); doc.save('mood_report.pdf'); }
+
+    // add keyboard shortcut for PDF
+    document.addEventListener('keydown',(e)=>{ if(e.ctrlKey && e.key==='p'){ e.preventDefault(); exportPDF(); } });
+
+    // --- Fab opens quick add modal (scroll to top focus) ---
+    document.getElementById('fab').addEventListener('click', ()=>{ window.scrollTo({top:0,behavior:'smooth'}); document.getElementById('moodInput').focus(); });
+
+    // --- full render ---
+    function renderAll(){ renderEntries(document.getElementById('filterTxt').value||''); renderCharts(); renderGarden(); renderAchievements(); }
+    renderAll();
+
+    // --- Service worker register ---
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   </script>
 </body>
 </html>
