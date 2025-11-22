@@ -21,12 +21,26 @@ nav{display:flex;justify-content:space-around;position:fixed;bottom:0;left:0;rig
 nav button{background:none;border:none;font-size:16px;padding:10px;color:#666;}
 nav button.active{color:var(--theme-accent);font-weight:bold;}
 section{display:none;padding:20px;}section.active{display:block;}
-.card{background:#fff;margin:10px 0;padding:15px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
+.card{background:#fff;margin:20px 0 10px 0;padding:15px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
+#log .card{margin-top:40px;} /* move log box down */
 #themePicker{margin-top:10px;}
 .fab{position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:20px;background:var(--theme-accent);color:white;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 8px rgba(0,0,0,0.2);} 
 #micBtn{font-size:20px;margin-left:10px;}
 #pinScreen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
 #pinScreen input{font-size:26px;padding:10px;text-align:center;border-radius:10px;width:150px;letter-spacing:12px;}
+input, textarea, select {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-accent);
+  border-radius: 8px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+textarea::placeholder, input::placeholder {
+  color: rgba(43, 43, 43, 0.6);
+}
+button{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -47,7 +61,7 @@ section{display:none;padding:20px;}section.active{display:block;}
  <select id="moodSelect">
  <option>😊 Happy</option><option>😔 Sad</option><option>😡 Angry</option><option>😵 Overwhelmed</option><option>😴 Tired</option><option>🫶 Loved</option>
  </select>
- <textarea id="moodNote" placeholder="What happened?" style="width:100%;margin-top:10px;font-size:16px;"></textarea>
+ <textarea id="moodNote" placeholder="What happened?" style="margin-top:10px;font-size:16px;"></textarea>
  <button id="micBtn">🎤</button>
  <button id="saveEntry">Save</button>
  </div>
@@ -84,7 +98,6 @@ tabs.forEach(btn=>btn.onclick=()=>{
  tabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
  sections.forEach(s=>s.classList.remove('active')); document.getElementById(btn.dataset.tab).classList.add('active');
 });
-
 // --- Theme System ---
 const themes={sage:{bg:'#e8f0e8',accent:'#9fbfa5',text:'#2b2b2b'},pink:{bg:'#ffeaf3',accent:'#ff7fbf',text:'#3a1e2e'},lavender:{bg:'#f3eaff',accent:'#b28dff',text:'#2b1e3a'},blue:{bg:'#e8f4ff',accent:'#7fafff',text:'#1e2e3a'},cocoa:{bg:'#f1e6d8',accent:'#b58b61',text:'#3a2e1e'},dark:{bg:'#1e1e1e',accent:'#7f7f7f',text:'#ffffff'}};
 function applyTheme(name){const t=themes[name];for(let v in t){document.documentElement.style.setProperty(`--theme-${v}`,t[v]);}localStorage.setItem('theme',name);} 
