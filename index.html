@@ -22,15 +22,16 @@ nav button{background:none;border:none;font-size:16px;padding:10px;color:#666;}
 nav button.active{color:var(--theme-accent);font-weight:bold;}
 section{display:none;padding:20px;}section.active{display:block;}
 .card{background:#fff;margin:20px 0 10px 0;padding:15px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
-#log .card{margin-top:40px;} /* move log box down */
+#log .card{margin-top:40px;}
 #themePicker{margin-top:10px;}
 .fab{position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:20px;background:var(--theme-accent);color:white;width:55px;height:55px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 4px 8px rgba(0,0,0,0.2);} 
 #micBtn{font-size:20px;margin-left:10px;}
 #pinScreen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
 #pinScreen input{font-size:26px;padding:10px;text-align:center;border-radius:10px;width:150px;letter-spacing:12px;}
+h2{color:black;}
 input, textarea, select {
-  background: var(--theme-bg);
-  color: var(--theme-text);
+  background: white;
+  color: black;
   border: 1px solid var(--theme-accent);
   border-radius: 8px;
   padding: 8px;
@@ -38,7 +39,7 @@ input, textarea, select {
   box-sizing: border-box;
 }
 textarea::placeholder, input::placeholder {
-  color: rgba(43, 43, 43, 0.6);
+  color: rgba(0,0,0,0.5);
 }
 button{cursor:pointer;}
 </style>
@@ -58,6 +59,7 @@ button{cursor:pointer;}
 <section id="log" class="active">
  <div class="card">
  <h2>Add Mood Entry</h2>
+ <button id="toggleEntries">Hide Entries</button>
  <select id="moodSelect">
  <option>😊 Happy</option><option>😔 Sad</option><option>😡 Angry</option><option>😵 Overwhelmed</option><option>😴 Tired</option><option>🫶 Loved</option>
  </select>
@@ -98,6 +100,7 @@ tabs.forEach(btn=>btn.onclick=()=>{
  tabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
  sections.forEach(s=>s.classList.remove('active')); document.getElementById(btn.dataset.tab).classList.add('active');
 });
+
 // --- Theme System ---
 const themes={sage:{bg:'#e8f0e8',accent:'#9fbfa5',text:'#2b2b2b'},pink:{bg:'#ffeaf3',accent:'#ff7fbf',text:'#3a1e2e'},lavender:{bg:'#f3eaff',accent:'#b28dff',text:'#2b1e3a'},blue:{bg:'#e8f4ff',accent:'#7fafff',text:'#1e2e3a'},cocoa:{bg:'#f1e6d8',accent:'#b58b61',text:'#3a2e1e'},dark:{bg:'#1e1e1e',accent:'#7f7f7f',text:'#ffffff'}};
 function applyTheme(name){const t=themes[name];for(let v in t){document.documentElement.style.setProperty(`--theme-${v}`,t[v]);}localStorage.setItem('theme',name);} 
@@ -105,18 +108,33 @@ let savedTheme=localStorage.getItem('theme'); if(savedTheme)applyTheme(savedThem
 document.getElementById('themePicker').onchange=e=>applyTheme(e.target.value);
 // Auto Dark Mode
 let hour=new Date().getHours(); if(hour>=20||hour<6) applyTheme('dark');
-// Voice to Text
+
+// --- Voice to Text ---
 let rec;if('webkitSpeechRecognition' in window){rec=new webkitSpeechRecognition();rec.continuous=false;rec.lang='en-US';document.getElementById('micBtn').onclick=()=>rec.start();rec.onresult=e=>document.getElementById('moodNote').value=e.results[0][0].transcript;}
-// Daily Reminder
+
+// --- Daily Reminder ---
 if('Notification' in window){document.getElementById('enableReminders').onclick=()=>{Notification.requestPermission().then(p=>{if(p==='granted'){setTimeout(()=>new Notification('How are you feeling today?'),5000);}});}}
-// Garden & Achievements
+
+// --- Garden & Achievements ---
 function updateGarden(){let count=JSON.parse(localStorage.getItem('entries')||'[]').filter(e=>e.mood.includes('😊')||e.mood.includes('🫶')).length; let plant='🌱'; if(count>5)plant='🌿'; if(count>10)plant='🌳'; document.getElementById('gardenArea').innerText=plant;}
 function updateAchievements(){let list=document.getElementById('achievementList'); list.innerHTML=''; let entries=JSON.parse(localStorage.getItem('entries')||'[]'); if(entries.length>=5)list.innerHTML+='<li>5 Entries Logged</li>'; if(entries.length>=20)list.innerHTML+='<li>20 Entries Logged</li>';}
-// Save Entries
+
+// --- Save Entries ---
 let saveBtn=document.getElementById('saveEntry'); saveBtn.onclick=()=>{let entries=JSON.parse(localStorage.getItem('entries')||'[]'); entries.push({mood:document.getElementById('moodSelect').value,note:document.getElementById('moodNote').value,time:Date.now()}); localStorage.setItem('entries',JSON.stringify(entries)); loadEntries(); updateGarden();updateAchievements(); loadCharts();}
 function loadEntries(){let box=document.getElementById('entries'); box.innerHTML=''; let entries=JSON.parse(localStorage.getItem('entries')||'[]'); entries.forEach(e=>{let d=new Date(e.time);box.innerHTML+=`<div class='card'><strong>${e.mood}</strong><br>${e.note}<br><em>${d.toLocaleString()}</em></div>`;});}
 loadEntries();
-// Chart.js Example
+
+// --- Hide/Show Entries ---
+const toggleBtn = document.getElementById('toggleEntries');
+const entriesDiv = document.getElementById('entries');
+let hidden = false;
+toggleBtn.onclick = () => {
+ hidden = !hidden;
+ entriesDiv.style.display = hidden ? 'none' : 'block';
+ toggleBtn.textContent = hidden ? 'Show Entries' : 'Hide Entries';
+};
+
+// --- Chart.js Example ---
 function loadCharts(){let entries=JSON.parse(localStorage.getItem('entries')||'[]');
 // Category Chart
 let catCtx=document.getElementById('categoryChart').getContext('2d');
@@ -128,6 +146,13 @@ let timeData=[0,0,0,0]; entries.forEach(e=>{let h=new Date(e.time).getHours();if
 new Chart(timeCtx,{type:'bar',data:{labels:['Night','Morning','Afternoon','Evening'],datasets:[{label:'Entries',data:timeData,backgroundColor:'var(--theme-accent)'}]}});
 }
 loadCharts();
+
+// --- PIN for Apple Devices ---
+document.getElementById('setPin').onclick=async()=>{let pin=prompt('Enter 4-digit PIN'); if(pin){const enc=new TextEncoder(); const keyData=await crypto.subtle.digest('SHA-256', enc.encode(pin)); localStorage.setItem('pinHash', Array.from(new Uint8Array(keyData)).map(b=>b.toString(16).padStart(2,'0')).join('')); alert('PIN Set'); showPinScreen();}}
+async function checkPin(input){const enc=new TextEncoder(); const keyData=await crypto.subtle.digest('SHA-256', enc.encode(input)); const hash=Array.from(new Uint8Array(keyData)).map(b=>b.toString(16).padStart(2,'0')).join(''); return hash===localStorage.getItem('pinHash');}
+function showPinScreen(){if(localStorage.getItem('pinHash')){document.getElementById('pinScreen').style.display='flex';}}
+document.getElementById('pinInput').addEventListener('keydown', async(e)=>{if(e.key==='Enter'){if(await checkPin(e.target.value)){document.getElementById('pinScreen').style.display='none';e.target.value='';}else{alert('Incorrect PIN'); e.target.value='';}}});
+window.onload=()=>{showPinScreen();}
 </script>
 </body>
 </html>
